@@ -71,4 +71,4 @@ git -C third_party/OpenRSI apply ../../patches/openrsi-single-card.patch
 .venv/bin/python -m pytest tests/test_sandbox.py tests/test_upstream.py -q
 ```
 
-当前结果为 **24 passed**（2026-10-07）。包含实际上游四种 operator、父节点/失败选择、经验卡持久化、两个数据库隔离/重载、Parquet round-trip/独立输入/manifest 校验、拒绝 dev 改标 train 和 symlink 越界，以及真实内核 sandbox 测试。测试中 0.2/0.3 为合成执行分数，不是 Amazon-C4 实验指标。后续真实业务与 Agent 结果由 `docs/EXPERIMENTS.md` 记录。
+当前结果为 **25 passed**（2026-10-07）。包含实际上游四种 operator、父节点/失败选择、经验卡持久化、两个数据库隔离/重载、Parquet round-trip/独立输入/manifest 校验、拒绝 dev 改标 train 和 symlink 越界，以及真实内核 sandbox 测试。测试中 0.2/0.3 为合成执行分数，不是 Amazon-C4 实验指标。真实业务与 Agent 结果由 `docs/EXPERIMENTS.md` 记录。

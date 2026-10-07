@@ -2,7 +2,19 @@
 
 在 Amazon-C4 商品检索任务上，让研究 Agent 生成负采样程序，根据真实训练反馈更新自身 LoRA 参数。业务训练器、候选库、初始化和预算固定；目标是研究 `A0 → A1 → A2` 的经验与参数学习。
 
-当前已经完成服务器预检、完整真实数据审计、自定义两层划分、固定 30,000 商品库，以及 BM25 / 随机负例 / 固定困难负例的真实业务训练对照。OpenRSI 程序进化、内核沙箱和单卡更新后端已实现，真实 Agent rollout / 更新验证正在进行。尚不声称完成多代参数更新、递归能力提升或最终测试。过程产物和失败原因保存在 `artifacts/`，运行完成后按实际证据更新结果。
+当前已跑通真实 `A0 → A1 → A2` 控制流程：OpenRSI 选择进化操作，Qwen 生成采样程序，在内核沙箱中执行，固定业务模型真实训练并反馈奖励，然后更新 1,843,200 个 LoRA 参数。两次更新均已保存、磁盘重载并核验参数哈希，第二次恢复了优化器状态；后续独立 rollout 核对了 A1/A2 身份。单卡训练峰值约 8.11 GiB。已完成数据审计、固定候选库、业务基线和有界对照；正式 meta-test 仍未评估。
+
+同一 meta-dev Toys 任务、相同种子、每代 4 次候选的试跑结果如下。程序库分别从空库开始，每代都保留自己的执行反馈；评估期间没有更新 Agent 参数。
+
+| Agent | 合法完成 / 候选数 | 最佳验证完整 MRR |
+| --- | ---: | ---: |
+| A0 | 2 / 4 | 0.008236 |
+| 一次更新后冻结 A1 | 0 / 4 | 未测得：全部执行失败 |
+| 两次更新后冻结 A2 | 3 / 4 | 0.008932 |
+
+这些结果只有一个任务、一个种子，A1 未显示收益，A2 的小幅数值差异不足以证明 RSI。训练任务上的固定 A0 与递归流程均为 2/4 个候选成功，最佳 MRR 同为 0.013229。各方法前置训练算力不同，不能声称等总算力优胜。第一版接口的 6 次失败、重试和所有额外成本均保留，详见 [实验记录](docs/EXPERIMENTS.md)；当前主要瓶颈是程序合法率与业务反馈质量。
+
+验证结果：86 项测试通过，另含 9 个子用例；源码编译和依赖一致性检查通过。实验已结束，没有后台训练。后续应先提升合法程序率，再进行多任务、多种子和等总预算比较；正式最终测试继续封存。
 
 原始数据为 21,223 条合成购物查询、1,058,417 个商品；这不是线上搜索日志。本项目使用自定义训练协议，不复现 Amazon-C4 原评测协议。`ori_review/ori_rating` 不进入模型或 Agent；meta-test 和 final-evaluation 保持封存。
 
@@ -79,7 +91,8 @@ PY
 
 ## 证据与归属
 
-- [真实数据审计](docs/DATA_AUDIT.md)、[固定协议](docs/PROTOCOL.md)、[复用差异](docs/UPSTREAM_CHANGES.md)、[实际隔离验证](docs/ISOLATION_FEASIBILITY.md)。
+- [真实数据审计](docs/DATA_AUDIT.md)、[固定协议](docs/PROTOCOL.md)、[复用差异](docs/UPSTREAM_CHANGES.md)、[实际隔离验证](docs/ISOLATION_FEASIBILITY.md)、[审查及负例抽检](docs/REVIEW.md)。
+- 原始运行入口：`artifacts/recursion/pilot_v2/pilot.json`；对照汇总：`artifacts/controls/comparison.json`。运行 `.venv/bin/python scripts/report_experiments.py` 可从记录重建汇总，无须重新训练。
 - 来源版本、大小、SHA256：`artifacts/data/raw/source_manifest.json` 与模型目录 `source_manifest.json`；划分和候选池：`artifacts/data/prepared/manifest.json`。
 - Draft/Improve/Debug/Crossover、程序库和经验机制来自 [OpenRSI](https://github.com/FrontisAI/OpenRSI)，不作为个人原创。上游原始材料为 CC BY-NC 4.0，第三方组件保留各自许可证。
 - Built with Qwen。实际选用的 **Qwen2.5-Coder-3B-Instruct 使用 Qwen Research License，仅限非商业研究/评估**，不是默认 Apache 2.0；许可证随模型下载保存。模型/adapter 分发还须保留相应声明。

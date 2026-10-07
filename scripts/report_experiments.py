@@ -297,7 +297,9 @@ def build_report(root):
                          expected=sum(row["expected"] for row in measurements),
                          complete=all(row["complete"] for row in measurements))
             pilot_cost_totals[key] = total
+    controls = snapshot.read(root / "artifacts" / "controls" / "comparison.json")
     return {"schema_version": 1, "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+            "control_comparison": controls,
             "business_runs": business, "business_config_summaries": summaries, "paired_seed_comparisons": pairs,
             "pilots": pilots, "pilot_cost_totals": pilot_cost_totals,
             "business_total_wall_seconds": aggregate(row["cost"].get("business_total_wall_seconds") for row in business),
@@ -389,6 +391,16 @@ def markdown(report):
         if row["failure_counts"]:
             lines += ["", f"`{row['name']}` recorded candidate failures:", ""]
             lines += [f"- {count} × {reason}" for reason, count in sorted(row["failure_counts"].items())]
+    controls = report.get("control_comparison")
+    if controls:
+        lines += ["", "## Equal proposal-budget development controls", "",
+                  f"Task: `{controls['evaluation_task']}`. Each checkpoint receives {controls['evaluation_proposals_each']} proposals in {controls['evaluation_groups_each']} search groups, with no Agent weight updates during evaluation.",
+                  "Fresh separate databases retain each method's own feedback between groups. Upfront training compute is unequal. Failed-only runs have no measured validation MRR.", "",
+                  "| Agent | Successful / proposed | Best measured full MRR | Search reward incl. failures | Wall seconds |",
+                  "| --- | ---: | ---: | ---: | ---: |"]
+        for label, row in controls.get("evaluations", {}).items():
+            lines.append(f"| {label} | {row['valid_candidates']} / {row['proposals']} | {fmt(row.get('best_validation_mrr'))} | {fmt(row.get('best_search_reward'))} | {fmt(row['total_wall_seconds'], 2)} |")
+        lines += ["", str(controls["limitations"])]
     lines += ["", "## Limits of the evidence", ""]
     lines += [f"- {limitation}" for limitation in report["limitations"]]
     lines += ["- Running or incomplete attempts may have generated tokens or consumed GPU time before a cost artifact exists; that unrecorded work is unknown, not free.",

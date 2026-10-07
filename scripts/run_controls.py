@@ -52,7 +52,9 @@ for label, adapter in [("A0", None), ("A1", updates[0]["path"]), ("A2", updates[
     comparison["evaluations"][label] = {
         "path": str(output), "checkpoint_id": next(iter(checkpoint_ids)),
         "valid_candidates": sum(item["success"] for item in results),
-        "proposals": len(results), "best_validation_mrr": max(item["reward"] for item in results),
+        "proposals": len(results),
+        "best_search_reward": max(item["reward"] for item in results),
+        "best_validation_mrr": max((item["reward"] for item in results if item["success"]), default=None),
         "total_wall_seconds": report["total_wall_seconds"],
     }
     write_json(root / "artifacts/controls/comparison.json", comparison)
