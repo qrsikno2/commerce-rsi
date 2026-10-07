@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "commerce-rsi"
+version = "0.1.0"
+description = "Controlled sampler research on Amazon-C4 with OpenRSI integration"
+requires-python = ">=3.11"
+dependencies = ["numpy>=1.26", "torch>=2.4"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+agent = ["transformers>=4.45,<5", "peft>=0.13", "accelerate>=1", "safetensors>=0.4"]
+upstream = ["pyarrow>=17"]
+
+[project.scripts]
+commerce-rsi = "commerce_rsi.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

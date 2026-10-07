@@ -1,0 +1,43 @@
+{
+  "protocol": "amazon-c4-custom-category-tasks-v1",
+  "scope": "control-path pilot only; meta-test locked",
+  "frozen_before_agent_rollout": true,
+  "training_task": "garden_03c966",
+  "development_task": "toys_7a17d0",
+  "candidate_count": 30000,
+  "candidate_sha256": "16f102fca82174ecf0972f9a9aa8bfe47b137b5cc0447ceb76ca70ca45315f44",
+  "business": {
+    "shared_towers": true,
+    "vocab_size": 32768,
+    "embedding_dim": 64,
+    "output_dim": 64,
+    "query_max_tokens": 64,
+    "item_max_tokens": 96,
+    "learning_rate": 0.002,
+    "weight_decay": 0.0,
+    "temperature": 0.1,
+    "steps": 100,
+    "batch_size": 32,
+    "num_negatives": 16,
+    "seed": 17
+  },
+  "reward": "untruncated validation MRR; execution failure = 0",
+  "reported_metrics": ["mrr", "mrr@10", "hit@10", "ndcg@10"],
+  "agent": {
+    "model": "Qwen/Qwen2.5-Coder-3B-Instruct",
+    "revision": "488639f1ff808d1d3d0ba301aef8c11461451ec5",
+    "lora_rank": 8,
+    "lora_alpha": 16,
+    "lora_dropout": 0.0,
+    "target_modules": ["q_proj", "v_proj"],
+    "learning_rate": 0.00001,
+    "generation_temperature": 1.0,
+    "top_p": 1.0,
+    "top_k": 0,
+    "max_new_tokens": 768,
+    "group_size": 2,
+    "method": "on-policy RLOO, completion log probability sum, one optimizer step per group with unequal rewards"
+  },
+  "budget": {"generations": 2, "max_groups_per_generation": 3, "max_business_seconds_per_candidate": 600},
+  "selection_basis": "Meta-dev paired experiments showed often-zero MRR@10 with independent1000-step and shared100-step towers. Shared100-step architecture selected for a lightweight pilot; full MRR selected for nonzero rank feedback, not a claim of better task performance."
+}

@@ -1,0 +1,43 @@
+diff --git a/OpenMLE-ERL/RL/program_database.py b/OpenMLE-ERL/RL/program_database.py
+index 26af98b..71fd034 100644
+--- a/OpenMLE-ERL/RL/program_database.py
++++ b/OpenMLE-ERL/RL/program_database.py
+@@ -159,6 +159,9 @@ class ProgramDatabase:
+         self.db_path = db_path
+         self.max_per_task = max_per_task
+         self._child_variance_nullable = True
++        # Commerce-RSI: connections belong to a database instance, not every
++        # database opened on this thread (e.g. independent train/dev runs).
++        self._local = threading.local()
+ 
+         # Ensure directory exists
+         os.makedirs(os.path.dirname(os.path.abspath(db_path)) if os.path.dirname(db_path) else ".", exist_ok=True)
+@@ -1227,6 +1230,7 @@ class AIRAInferenceEvoSearch(SearchAlgorithm):
+         execution_timeout: int = 7200,
+         initial_temp: float = 1.0,
+         final_temp: float = 1.0,
++        prompt_builder=None,
+     ):
+         self.policy = str(policy or "rl_mixed").strip().lower()
+         if self.policy not in {"rl_mixed", "original"}:
+@@ -1240,6 +1244,9 @@ class AIRAInferenceEvoSearch(SearchAlgorithm):
+         self.final_temp = float(final_temp or self.initial_temp)
+         self._task_generation: dict[str, int] = {}
+         self.last_selection_metadata: dict[str, Any] = {}
++        # Commerce-RSI can retain upstream selection/experience semantics while
++        # constraining prompts to its sampler-only task interface.
++        self.prompt_builder = prompt_builder
+ 
+     def _all_programs(self, database: ProgramDatabase, task_name: str) -> list[Program]:
+         return database.get_all(task_name)
+@@ -1452,7 +1459,9 @@ class AIRAInferenceEvoSearch(SearchAlgorithm):
+             lower_is_better=False,
+             max_related_cards=8 if mode == "debug" else 3,
+         )
+-        from prompt_builder import build_airaevo_prompt
++        build_airaevo_prompt = self.prompt_builder
++        if build_airaevo_prompt is None:
++            from prompt_builder import build_airaevo_prompt
+ 
+         prompt = build_airaevo_prompt(
+             mode=mode,
